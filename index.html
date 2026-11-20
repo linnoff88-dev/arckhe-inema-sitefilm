@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INEMA.CLUB — Sinal</title>
+<meta name="description" content="Do ruído ao acesso centralizado: o filme-scroll do INEMA.CLUB.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e27; --bg2:#030e20; --cyan:#00d9ff; --violet:#8b5cf6; --amber:#f59e0b;
+    --ink:#e8ecff; --ink-dim:#8b93b8; --border:#2d3548;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{background:var(--bg); scroll-behavior:auto;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.02em;}
+  a{color:inherit;}
+  ::selection{background:var(--cyan); color:#04101f;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px; color:#fff; mix-blend-mode:normal;
+    transition:color .25s ease;
+  }
+  header.on-light{color:#04101f;}
+  .logo-lockup{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.05rem;}
+  .logo-lockup svg{width:26px; height:26px; display:block;}
+  .chapter-readout{display:flex; align-items:center; gap:12px; font-size:.78rem; color:currentColor; opacity:.85;}
+  .chapter-readout .bar{width:110px; height:2px; background:currentColor; opacity:.3; position:relative; overflow:hidden;}
+  .chapter-readout .bar i{position:absolute; inset:0; background:var(--cyan); transform-origin:left; transform:scaleX(0);}
+
+  /* ---------- FILM SCROLL DRIVER ---------- */
+  #film-scroll{ position:relative; height:850vh; background:var(--bg); }
+  #film-stage{
+    position:sticky; top:0; left:0; width:100%; height:100vh; overflow:hidden;
+    background:var(--bg);
+  }
+  #film-canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .film-vignette{
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 45%, rgba(3,6,20,.55) 100%);
+  }
+  .film-grain{
+    position:absolute; inset:0; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .film-fade-out{
+    position:absolute; inset:0; pointer-events:none; background:var(--bg2); opacity:0;
+  }
+  .progress-loader{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); z-index:5; transition:opacity .5s ease;
+  }
+  .progress-loader .bar{width:180px; height:2px; background:var(--border); position:relative; overflow:hidden;}
+  .progress-loader .bar i{position:absolute; inset:0; background:var(--cyan); transform-origin:left; transform:scaleX(0);}
+  .progress-loader span{position:absolute; margin-top:34px; font-size:.72rem; color:var(--ink-dim); letter-spacing:.08em;}
+
+  /* ---------- BEATS ---------- */
+  .beat{
+    position:absolute; left:6vw; right:6vw; top:50%; transform:translateY(-50%);
+    z-index:10; opacity:0; pointer-events:none;
+  }
+  .beat.left{ right:auto; max-width:640px; }
+  .beat:not(.hero){
+    padding:28px 32px; border-radius:18px; width:fit-content; max-width:600px;
+    background:linear-gradient(120deg, rgba(3,6,20,.6), rgba(3,6,20,.2) 75%);
+    backdrop-filter:blur(6px);
+  }
+  .beat.finale{ max-width:600px; }
+  .beat .kicker{
+    font-size:.75rem; letter-spacing:.24em; text-transform:uppercase; color:var(--cyan);
+    margin-bottom:14px; display:block; text-shadow:0 2px 18px rgba(3,6,20,.9);
+  }
+  .beat h2{
+    font-size:clamp(2.2rem,6vw,4.6rem); font-weight:600; line-height:1.02; color:#fff;
+    text-shadow:0 2px 30px rgba(3,6,20,.95), 0 0 60px rgba(3,6,20,.7);
+  }
+  .beat p{
+    margin-top:16px; font-size:1.05rem; color:var(--ink-dim); max-width:480px;
+    text-shadow:0 2px 18px rgba(3,6,20,.95);
+  }
+  .beat.hero{ left:0; right:0; text-align:center; max-width:none; }
+  .beat.hero h2{ font-size:clamp(2.6rem,8vw,6.4rem); }
+  .beat.finale{ left:6vw; right:auto; max-width:600px; }
+
+  /* ---------- AFTER-FILM CONTENT ---------- */
+  main{ position:relative; background:var(--bg2); z-index:20; }
+  .landing-zone{
+    height:14vh; background:linear-gradient(var(--bg2), var(--bg2));
+  }
+  section{ padding:120px 8vw; max-width:1240px; margin:0 auto; }
+  .section-kicker{
+    font-size:.75rem; letter-spacing:.22em; text-transform:uppercase; color:var(--cyan); margin-bottom:18px; display:block;
+  }
+  .section-title{ font-size:clamp(1.8rem,4vw,3rem); font-weight:600; max-width:720px; margin-bottom:20px; }
+  .section-lede{ color:var(--ink-dim); max-width:560px; font-size:1.05rem; line-height:1.6; margin-bottom:56px; }
+
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  @media (max-width:860px){ .grid3{ grid-template-columns:1fr; } }
+  .card{
+    border:1px solid var(--border); border-radius:14px; padding:32px;
+    background:linear-gradient(180deg, rgba(139,92,246,.05), transparent);
+    transition:border-color .25s ease, transform .25s ease;
+  }
+  .card:hover{ border-color:var(--cyan); transform:translateY(-4px); }
+  .card .icon{ font-size:1.8rem; margin-bottom:18px; display:block; }
+  .card h3{ font-size:1.15rem; margin-bottom:10px; }
+  .card p{ color:var(--ink-dim); font-size:.95rem; line-height:1.55; }
+
+  .cta-band{
+    text-align:center; padding:140px 8vw; background:radial-gradient(ellipse at center, rgba(0,217,255,.08), transparent 70%);
+  }
+  .cta-band h2{ font-size:clamp(1.9rem,4.5vw,3.2rem); margin-bottom:26px; }
+  .cta-band p{ color:var(--ink-dim); margin-bottom:38px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; padding:16px 32px; border-radius:999px;
+    background:var(--cyan); color:#04101f; font-weight:600; text-decoration:none; font-size:.95rem;
+    box-shadow:0 0 0 1px rgba(0,217,255,.3), 0 12px 40px -8px rgba(0,217,255,.5);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 0 0 1px rgba(0,217,255,.5), 0 16px 48px -8px rgba(0,217,255,.7); }
+
+  footer{
+    border-top:1px solid var(--border); padding:56px 8vw; display:flex; justify-content:space-between;
+    align-items:center; flex-wrap:wrap; gap:24px; color:var(--ink-dim); font-size:.85rem;
+  }
+  .socials{ display:flex; gap:18px; }
+  .socials a{ opacity:.7; transition:opacity .2s ease; }
+  .socials a:hover{ opacity:1; }
+  .socials svg{ width:20px; height:20px; }
+
+  @media (prefers-reduced-motion: reduce){
+    #film-scroll{ height:auto; }
+    #film-stage{ position:relative; height:100vh; }
+    .beat{ opacity:1 !important; position:relative; transform:none; top:auto; left:auto; right:auto; margin:40px auto; }
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <div class="logo-lockup">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="2"/>
+      <circle cx="16" cy="16" r="4.2" fill="currentColor"/>
+    </svg>
+    INEMA.CLUB
+  </div>
+  <div class="chapter-readout">
+    <span id="chapter-label">Sinal</span>
+    <div class="bar"><i id="chapter-bar"></i></div>
+  </div>
+
+</header>
+
+<nav aria-label="Versões" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:45; display:flex; gap:2px; padding:4px; border-radius:999px; background:rgba(3,6,20,.55); backdrop-filter:blur(8px); border:1px solid rgba(139,147,184,.25); font-size:.7rem; letter-spacing:.04em;">
+  <a href="index.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; background:rgba(0,217,255,.15); color:#00d9ff; white-space:nowrap;">Filme I</a>
+  <a href="index2.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme II</a>
+  <a href="index3.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme III</a>
+  <a href="lane-a.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Code I</a>
+  <a href="lane-a2.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Code II</a>
+</nav>
+
+<div id="film-scroll">
+  <div id="film-stage">
+    <div class="progress-loader" id="loader">
+      <div class="bar"><i id="loader-bar"></i></div>
+      <span>carregando o sinal…</span>
+    </div>
+    <canvas id="film-canvas"></canvas>
+    <div class="film-vignette"></div>
+    <div class="film-grain"></div>
+    <div class="film-fade-out" id="fade-out"></div>
+
+    <div class="beat hero" data-in="-0.1" data-peak="0" data-out="0.09">
+      <span class="kicker">INEMA.CLUB</span>
+      <h2>No caos, um sinal.</h2>
+    </div>
+
+    <div class="beat" data-in="0.14" data-peak="0.22" data-out="0.32">
+      <span class="kicker">Capítulo 01 — Ruído</span>
+      <h2>Milhares de fragmentos, dispersos no vazio.</h2>
+      <p>Cursos soltos, projetos espalhados, conhecimento sem lugar certo.</p>
+    </div>
+
+    <div class="beat left" data-in="0.32" data-peak="0.40" data-out="0.50">
+      <span class="kicker">Capítulo 02 — Convergência</span>
+      <h2>Tudo começa a puxar pro centro.</h2>
+      <p>Cada fragmento encontra sua direção.</p>
+    </div>
+
+    <div class="beat" data-in="0.50" data-peak="0.58" data-out="0.68">
+      <span class="kicker">Capítulo 03 — Núcleo</span>
+      <h2>Um ponto de energia se acende.</h2>
+      <p>É daqui que tudo passa a existir.</p>
+    </div>
+
+    <div class="beat left" data-in="0.68" data-peak="0.76" data-out="0.86">
+      <span class="kicker">Capítulo 04 — Rede</span>
+      <h2>O núcleo se abre em uma rede viva.</h2>
+      <p>Cursos, trilhas, projetos e comunidade — conectados.</p>
+    </div>
+
+    <div class="beat finale" data-in="0.86" data-peak="0.95" data-out="2">
+      <span class="kicker">Capítulo 05 — Portal</span>
+      <h2>Acesso centralizado aos seus cursos e plataformas.</h2>
+      <p>Aprenda, Pratique, Evolua — tudo em um só lugar.</p>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="landing-zone"></div>
+
+  <section id="o-que-e">
+    <span class="section-kicker">O que é o INEMA.CLUB</span>
+    <h2 class="section-title">Um portal só, pra tudo que você já vem construindo.</h2>
+    <p class="section-lede">Cursos, trilhas, projetos e comunidade — centralizados num único acesso, sem precisar lembrar em qual link ficou cada coisa.</p>
+    <div class="grid3">
+      <div class="card">
+        <span class="icon">📚</span>
+        <h3>Cursos &amp; Trilhas</h3>
+        <p>Conteúdos organizados por trilha, do primeiro passo ao avançado, sempre atualizados.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🧩</span>
+        <h3>Projetos da comunidade</h3>
+        <p>Repositórios, skills e ferramentas nascidos dentro do próprio ecossistema INEMA.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🌐</span>
+        <h3>Comunidade viva</h3>
+        <p>Gente construindo, testando e trocando junto — não é só um catálogo estático.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-band">
+    <h2>O sinal já está aceso.</h2>
+    <p>Entre no portal e comece de onde estiver.</p>
+    <a class="btn" href="https://inema.club" target="_blank" rel="noopener">
+      Acessar o INEMA.CLUB
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+
+  <footer>
+    <span>© INEMA.CLUB — todos os capítulos, um só portal.</span>
+    <div class="socials">
+      <a href="https://inema.vip" target="_blank" rel="noopener" aria-label="Comunidade">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 011.94.24c-.6.86-1.4 2.02-1.94 3.26-.54-1.24-1.34-2.4-1.94-3.26A8 8 0 0112 4zm-4.3 1.2c.7 1 1.6 2.3 2.2 3.7-1.5.3-3 .9-4.2 1.7a8.05 8.05 0 012-5.4zm8.6 0a8.05 8.05 0 012 5.4c-1.2-.8-2.7-1.4-4.2-1.7.6-1.4 1.5-2.7 2.2-3.7zM4 12c0-.4 0-.8.06-1.2 1.3-1 3.1-1.7 4.94-2-.5 1-.8 2.1-.9 3.2H4zm10.9-3.2c1.84.3 3.64 1 4.94 2 .06.4.06.8.06 1.2h-4.1c-.1-1.1-.4-2.2-.9-3.2zM4.2 13.6h4.06c.1 1.2.4 2.3.9 3.4a8.06 8.06 0 01-4.96-3.4zm5.9 0h3.8a8.6 8.6 0 01-1.9 3.9 8.6 8.6 0 01-1.9-3.9zm5.8 0h4.06a8.06 8.06 0 01-4.96 3.4c.5-1.1.8-2.2.9-3.4z"/></svg>
+      </a>
+      <a href="https://inema.club" target="_blank" rel="noopener" aria-label="Portal">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </a>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function(){
+  const FRAME_COUNT = 141;
+  const FRAME_DIR = 'frames/';
+  const framePath = i => FRAME_DIR + 'f_' + String(i+1).padStart(4,'0') + '.jpg';
+
+  const canvas = document.getElementById('film-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize(){
+    canvas.width = innerWidth * dpr;
+    canvas.height = innerHeight * dpr;
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const images = new Array(FRAME_COUNT).fill(null);
+  const bitmaps = new Map(), decoding = new Set();
+  const B_AHEAD = 18, B_KEEP = 28;
+  let bmpCenter = -999, displayed = 0, loadedCount = 0;
+
+  const loader = document.getElementById('loader');
+  const loaderBar = document.getElementById('loader-bar');
+
+  function drawFrame(idx, force){
+    if (!force && idx === displayed && bitmaps.has(idx)) return;
+    displayed = idx;
+    const bmp = bitmaps.get(idx);
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0,0,w,h);
+    if (bmp){
+      const scale = Math.max(w / bmp.width, h / bmp.height);
+      const dw = bmp.width * scale, dh = bmp.height * scale;
+      ctx.drawImage(bmp, (w-dw)/2, (h-dh)/2, dw, dh);
+    } else {
+      let j = idx;
+      for (let d=1; d<FRAME_COUNT; d++){
+        const lo = idx-d, hi = idx+d;
+        if (lo>=0 && images[lo] && images[lo].complete){ j = lo; break; }
+        if (hi<FRAME_COUNT && images[hi] && images[hi].complete){ j = hi; break; }
+      }
+      const img = images[j];
+      if (img && img.complete && img.naturalWidth){
+        const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+        const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+        ctx.drawImage(img, (w-dw)/2, (h-dh)/2, dw, dh);
+      }
+    }
+  }
+
+  function ensureBitmaps(center){
+    if (Math.abs(center - bmpCenter) < 3) return;
+    bmpCenter = center;
+    const lo = Math.max(0, center - B_AHEAD), hi = Math.min(FRAME_COUNT-1, center + B_AHEAD);
+    for (let i=lo; i<=hi; i++){
+      if (bitmaps.has(i) || decoding.has(i) || !images[i] || !images[i].complete) continue;
+      decoding.add(i);
+      createImageBitmap(images[i]).then(b => {
+        decoding.delete(i);
+        if (Math.abs(i - bmpCenter) > B_KEEP){ b.close(); return; }
+        bitmaps.set(i, b);
+        if (i === displayed) drawFrame(i, true);
+      }).catch(() => decoding.delete(i));
+    }
+    for (const k of Array.from(bitmaps.keys()))
+      if (k < center - B_KEEP || k > center + B_KEEP){ bitmaps.get(k).close(); bitmaps.delete(k); }
+  }
+
+  // concurrency-capped frame pump
+  let nextToQueue = 0; const CONCURRENCY = 10; let inFlight = 0;
+  function pump(){
+    while (inFlight < CONCURRENCY && nextToQueue < FRAME_COUNT){
+      const i = nextToQueue++; inFlight++;
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        inFlight--; loadedCount++;
+        loaderBar.style.transform = 'scaleX(' + (loadedCount/FRAME_COUNT) + ')';
+        if (loadedCount >= Math.min(FRAME_COUNT, 12)) loader.style.opacity = '0';
+        if (loadedCount >= FRAME_COUNT) setTimeout(()=>loader.remove(), 500);
+        pump();
+      };
+      img.src = framePath(i);
+      images[i] = img;
+    }
+  }
+  pump();
+
+  // ---- progress + lerped playhead ----
+  const filmScroll = document.getElementById('film-scroll');
+  const fadeOut = document.getElementById('fade-out');
+  const header = document.getElementById('site-header');
+  const chapterLabel = document.getElementById('chapter-label');
+  const chapterBar = document.getElementById('chapter-bar');
+  const beats = Array.from(document.querySelectorAll('.beat')).map(el => ({
+    el, in: +el.dataset.in, peak: +el.dataset.peak, out: +el.dataset.out
+  }));
+  const chapters = ['Sinal','Ruído','Convergência','Núcleo','Rede','Portal'];
+
+  let currentFrame = 0, targetProgress = 0;
+
+  function getProgress(){
+    const r = filmScroll.getBoundingClientRect();
+    return Math.max(0, Math.min(1, -r.top / (r.height - innerHeight)));
+  }
+
+  function beatAlpha(b, p){
+    if (p < b.in || p > b.out) return 0;
+    if (p < b.peak) return (p - b.in) / Math.max(1e-4, b.peak - b.in);
+    if (b.out > 1.5) return 1;
+    return 1 - (p - b.peak) / Math.max(1e-4, b.out - b.peak);
+  }
+
+  function applyBeats(p){
+    beats.forEach(b => {
+      const a = beatAlpha(b, p);
+      b.el.style.opacity = a;
+      b.el.style.transform = 'translateY(' + (-50 + (1-a)*14) + 'px)';
+      b.el.style.pointerEvents = a > 0.05 ? 'auto' : 'none';
+    });
+  }
+
+  let lastSample = 0;
+  function sampleHeaderLuminance(){
+    const now = performance.now();
+    if (now - lastSample < 180) return;
+    lastSample = now;
+    try {
+      const sw = 16, sh = 4;
+      const off = sampleHeaderLuminance._c || (sampleHeaderLuminance._c = document.createElement('canvas'));
+      off.width = sw; off.height = sh;
+      const octx = off.getContext('2d');
+      octx.drawImage(canvas, 0, 0, canvas.width, 90*dpr, 0, 0, sw, sh);
+      const data = octx.getImageData(0,0,sw,sh).data;
+      let sum=0, n=0;
+      for (let i=0;i<data.length;i+=4){ sum += 0.2126*data[i]+0.7152*data[i+1]+0.0722*data[i+2]; n++; }
+      const lum = sum/n;
+      header.classList.toggle('on-light', lum > 138);
+    } catch(e){}
+  }
+
+  function tick(){
+    const p = getProgress();
+    targetProgress = p;
+    const target = p * (FRAME_COUNT - 1);
+    currentFrame += (target - currentFrame) * (reducedMotion ? 1 : 0.14);
+    const idx = Math.round(Math.max(0, Math.min(FRAME_COUNT-1, currentFrame)));
+    ensureBitmaps(idx);
+    drawFrame(idx);
+    sampleHeaderLuminance();
+    applyBeats(p);
+
+    const chapIdx = Math.min(chapters.length-1, Math.floor(p * chapters.length));
+    chapterLabel.textContent = chapters[chapIdx];
+    chapterBar.style.transform = 'scaleX(' + p + ')';
+
+    const fadeP = Math.max(0, (p - 0.92) / 0.08);
+    fadeOut.style.opacity = fadeP;
+    document.querySelector('.chapter-readout').style.opacity = p >= 0.96 ? Math.max(0, 1 - (p-0.96)/0.04) : 1;
+
+    requestAnimationFrame(tick);
+  }
+
+  // pre-warm frame 0
+  ensureBitmaps(0);
+  requestAnimationFrame(tick);
+
+  // ---- dev contract ----
+  const params = new URLSearchParams(location.search);
+  const JUMP = params.get('jump');
+  if (JUMP !== null) history.scrollRestoration = 'manual';
+  window.addEventListener('load', () => {
+    if (JUMP !== null){
+      scrollTo(0, +JUMP || 0);
+      const p = getProgress();
+      currentFrame = p * (FRAME_COUNT - 1);
+      const idx = Math.round(currentFrame);
+      ensureBitmaps(idx); drawFrame(idx, true); applyBeats(p);
+    }
+    window.__ready = true;
+  });
+
+  // ---- jank meter ----
+  let lastT = performance.now(), maxDelta = 0, lastLog = performance.now();
+  function jankLoop(t){
+    const d = t - lastT; lastT = t;
+    if (d > maxDelta) maxDelta = d;
+    if (t - lastLog > 2000){
+      console.log('[jank] max frame delta (2s window):', maxDelta.toFixed(1), 'ms');
+      maxDelta = 0; lastLog = t;
+    }
+    requestAnimationFrame(jankLoop);
+  }
+  requestAnimationFrame(jankLoop);
+})();
+</script>
+</body>
+</html>

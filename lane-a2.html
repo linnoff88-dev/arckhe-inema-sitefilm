@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INEMA.CLUB — Sinal II (Lane A, corrida horizontal)</title>
+<meta name="description" content="Do ruído ao acesso centralizado: versão II do filme-scroll pure-code do INEMA.CLUB — corrida horizontal, âmbar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0e27; --bg2:#030e20; --cyan:#00d9ff; --violet:#8b5cf6; --amber:#f59e0b; --gold:#fcd34d;
+    --ink:#e8ecff; --ink-dim:#8b93b8; --border:#2d3548;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{background:var(--bg);}
+  body{
+    background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.02em;}
+  a{color:inherit;}
+  ::selection{background:var(--amber); color:#1a1206;}
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px; color:#fff;
+  }
+  .logo-lockup{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.05rem;}
+  .logo-lockup svg{width:26px; height:26px; display:block;}
+  .chapter-readout{display:flex; align-items:center; gap:12px; font-size:.78rem; opacity:.85;}
+  .chapter-readout .bar{width:110px; height:2px; background:currentColor; opacity:.3; position:relative; overflow:hidden;}
+  .chapter-readout .bar i{position:absolute; inset:0; background:var(--amber); transform-origin:left; transform:scaleX(0);}
+
+  /* ---------- HERO ---------- */
+  #hero{
+    height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  #hero::before{
+    content:''; position:absolute; inset:-20%;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 65%, rgba(245,158,11,.13), transparent 65%),
+      radial-gradient(ellipse 40% 30% at 30% 30%, rgba(139,92,246,.10), transparent 70%);
+  }
+  #hero .kicker{ font-size:.75rem; letter-spacing:.28em; text-transform:uppercase; color:var(--amber); margin-bottom:20px; display:block; }
+  #hero h1{ font-size:clamp(2.8rem,9vw,7rem); font-weight:600; line-height:.98; position:relative; z-index:2; }
+  #hero h1 .line{ display:block; overflow:hidden; }
+  #hero h1 .line > span{ display:inline-block; }
+  #hero .sub{ margin-top:26px; color:var(--ink-dim); font-size:1.05rem; max-width:440px; position:relative; z-index:2; }
+  .scroll-hint{
+    position:absolute; bottom:34px; left:50%; transform:translateX(-50%);
+    font-size:.72rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .scroll-hint::after{
+    content:''; width:1px; height:38px; background:linear-gradient(var(--amber), transparent);
+  }
+
+  /* ---------- TICKER ---------- */
+  .ticker-band{
+    padding:26px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    overflow:hidden; white-space:nowrap; background:rgba(3,6,20,.4);
+  }
+  .ticker-track{ display:inline-block; will-change:transform; }
+  .ticker-track span{
+    font-family:'Space Grotesk',sans-serif; font-size:1.15rem; font-weight:500;
+    color:var(--ink-dim); margin-right:56px;
+  }
+  .ticker-track span em{ font-style:normal; color:var(--amber); }
+
+  /* ---------- HORIZONTAL RUN (the film) ---------- */
+  #run{ position:relative; }
+  #run .stage{ height:100vh; overflow:hidden; display:flex; align-items:center; }
+  #track{ display:flex; width:max-content; will-change:transform; }
+  .panel{
+    width:88vw; height:100vh; flex:0 0 auto; position:relative;
+    display:flex; align-items:center; padding:0 7vw;
+  }
+  .panel .num{
+    position:absolute; top:16vh; right:8vw;
+    font-family:'Space Grotesk',sans-serif; font-size:clamp(5rem,16vw,12rem); font-weight:700;
+    color:transparent; -webkit-text-stroke:1px rgba(245,158,11,.28); line-height:1; user-select:none;
+  }
+  .panel .inner{ max-width:620px; position:relative; z-index:2; }
+  .panel .kicker{ font-size:.75rem; letter-spacing:.26em; text-transform:uppercase; color:var(--amber); margin-bottom:16px; display:block; }
+  .panel h2{ font-size:clamp(2.2rem,5.5vw,4.2rem); font-weight:600; line-height:1.03; }
+  .panel p{ margin-top:18px; color:var(--ink-dim); font-size:1.06rem; max-width:480px; line-height:1.6; }
+  .panel .art{
+    position:absolute; inset:0; pointer-events:none; overflow:hidden;
+  }
+  /* per-panel art: CSS-only shapes with parallax via containerAnimation */
+  .shard{
+    position:absolute; border-radius:4px;
+    background:linear-gradient(135deg, rgba(0,217,255,.5), rgba(139,92,246,.35));
+    box-shadow:0 0 24px rgba(0,217,255,.25);
+  }
+  .streak{
+    position:absolute; height:2px; border-radius:2px;
+    background:linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity:.55;
+  }
+  .halo{
+    position:absolute; border-radius:50%; border:1.5px solid rgba(245,158,11,.4);
+  }
+  .node-dot{
+    position:absolute; width:9px; height:9px; border-radius:50%;
+    background:var(--violet); box-shadow:0 0 14px rgba(139,92,246,.7);
+  }
+  .link-line{
+    position:absolute; height:1px; background:rgba(0,217,255,.3); transform-origin:left center;
+  }
+  .panel.finale-panel{ width:100vw; justify-content:center; text-align:center; }
+  .panel.finale-panel .inner{ max-width:820px; }
+  .emblem{
+    width:110px; height:110px; margin:0 auto 30px;
+  }
+  .emblem circle{ fill:none; stroke:var(--amber); stroke-width:2; }
+  .emblem circle.inner-c{ stroke:var(--cyan); }
+
+  /* ---------- STATS ---------- */
+  #stats{ padding:130px 8vw; max-width:1240px; margin:0 auto; }
+  .stats-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; text-align:center; }
+  @media (max-width:860px){ .stats-row{ grid-template-columns:1fr; } }
+  .stat h3{
+    font-size:clamp(2.6rem,6vw,4.4rem); font-weight:700; color:var(--amber);
+    font-variant-numeric:tabular-nums;
+  }
+  .stat span{ color:var(--ink-dim); font-size:.95rem; letter-spacing:.06em; text-transform:uppercase; }
+
+  /* ---------- EDITORIAL REVEALS ---------- */
+  #editorial{ padding:40px 8vw 120px; max-width:1240px; margin:0 auto; }
+  .row{
+    display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;
+    padding:64px 0; border-top:1px solid var(--border);
+  }
+  @media (max-width:860px){ .row{ grid-template-columns:1fr; } }
+  .row .visual{
+    height:280px; border-radius:16px; overflow:hidden; position:relative;
+    clip-path:inset(0 0 100% 0);
+  }
+  .row .visual .fill{ position:absolute; inset:0; }
+  .row:nth-child(1) .fill{ background:linear-gradient(135deg, rgba(0,217,255,.18), rgba(3,6,20,.9)), repeating-linear-gradient(45deg, rgba(0,217,255,.06) 0 2px, transparent 2px 18px); }
+  .row:nth-child(2) .fill{ background:linear-gradient(135deg, rgba(139,92,246,.2), rgba(3,6,20,.9)), repeating-linear-gradient(-45deg, rgba(139,92,246,.07) 0 2px, transparent 2px 18px); }
+  .row:nth-child(3) .fill{ background:linear-gradient(135deg, rgba(245,158,11,.16), rgba(3,6,20,.92)), repeating-linear-gradient(90deg, rgba(245,158,11,.06) 0 2px, transparent 2px 22px); }
+  .row .visual .glyph{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:3rem;
+  }
+  .row h3{ font-size:1.6rem; margin-bottom:12px; }
+  .row p{ color:var(--ink-dim); line-height:1.6; }
+
+  /* ---------- CTA + FOOTER ---------- */
+  .cta-band{
+    text-align:center; padding:150px 8vw;
+    background:radial-gradient(ellipse at center, rgba(245,158,11,.09), transparent 70%);
+  }
+  .cta-band h2{ font-size:clamp(1.9rem,4.5vw,3.2rem); margin-bottom:26px; }
+  .cta-band p{ color:var(--ink-dim); margin-bottom:38px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; padding:16px 32px; border-radius:999px;
+    background:var(--amber); color:#1a1206; font-weight:600; text-decoration:none; font-size:.95rem;
+    box-shadow:0 0 0 1px rgba(245,158,11,.35), 0 12px 40px -8px rgba(245,158,11,.5);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 0 0 1px rgba(245,158,11,.55), 0 16px 48px -8px rgba(245,158,11,.7); }
+  footer{
+    border-top:1px solid var(--border); padding:56px 8vw; display:flex; justify-content:space-between;
+    align-items:center; flex-wrap:wrap; gap:24px; color:var(--ink-dim); font-size:.85rem;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #run .stage{ height:auto; display:block; overflow:visible; }
+    #track{ display:block; width:auto; }
+    .panel{ width:auto; height:auto; padding:80px 8vw; }
+    .row .visual{ clip-path:none; }
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <div class="logo-lockup">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="2"/>
+      <circle cx="16" cy="16" r="4.2" fill="currentColor"/>
+    </svg>
+    INEMA.CLUB
+  </div>
+  <div class="chapter-readout">
+    <span id="chapter-label">Sinal II</span>
+    <div class="bar"><i id="chapter-bar"></i></div>
+  </div>
+
+</header>
+
+<nav aria-label="Versões" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:45; display:flex; gap:2px; padding:4px; border-radius:999px; background:rgba(3,6,20,.55); backdrop-filter:blur(8px); border:1px solid rgba(139,147,184,.25); font-size:.7rem; letter-spacing:.04em;">
+  <a href="index.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme I</a>
+  <a href="index2.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme II</a>
+  <a href="index3.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme III</a>
+  <a href="lane-a.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Code I</a>
+  <a href="lane-a2.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; background:rgba(245,158,11,.15); color:#f59e0b; white-space:nowrap;">Code II</a>
+</nav>
+
+<section id="hero">
+  <span class="kicker">INEMA.CLUB — Sinal II</span>
+  <h1 id="hero-title">
+    <span class="line"><span>No caos,</span></span>
+    <span class="line"><span>um sinal.</span></span>
+  </h1>
+  <p class="sub">A jornada inteira corre na horizontal desta vez — role e atravesse os capítulos.</p>
+  <div class="scroll-hint">role</div>
+</section>
+
+<div class="ticker-band">
+  <div class="ticker-track" id="ticker">
+    <span>cursos <em>·</em> trilhas <em>·</em> projetos <em>·</em> comunidade <em>·</em> aprenda <em>·</em> pratique <em>·</em> evolua <em>·</em>&nbsp;</span><span>cursos <em>·</em> trilhas <em>·</em> projetos <em>·</em> comunidade <em>·</em> aprenda <em>·</em> pratique <em>·</em> evolua <em>·</em>&nbsp;</span>
+  </div>
+</div>
+
+<div id="run">
+  <div class="stage">
+    <div id="track">
+
+      <div class="panel" id="p1">
+        <div class="art">
+          <div class="shard" style="top:18%; left:64%; width:26px; height:26px;" data-speed="-60"></div>
+          <div class="shard" style="top:66%; left:74%; width:14px; height:14px;" data-speed="-120"></div>
+          <div class="shard" style="top:34%; left:86%; width:20px; height:20px;" data-speed="-90"></div>
+          <div class="shard" style="top:76%; left:58%; width:10px; height:10px;" data-speed="-150"></div>
+          <div class="shard" style="top:12%; left:80%; width:16px; height:16px;" data-speed="-40"></div>
+        </div>
+        <span class="num">01</span>
+        <div class="inner">
+          <span class="kicker">Capítulo 01 — Ruído</span>
+          <h2>Milhares de fragmentos, dispersos no vazio.</h2>
+          <p>Cursos soltos, projetos espalhados, conhecimento sem lugar certo.</p>
+        </div>
+      </div>
+
+      <div class="panel" id="p2">
+        <div class="art">
+          <div class="streak" style="top:24%; left:50%; width:34vw;" data-speed="-140"></div>
+          <div class="streak" style="top:46%; left:56%; width:26vw;" data-speed="-90"></div>
+          <div class="streak" style="top:64%; left:52%; width:30vw;" data-speed="-170"></div>
+          <div class="streak" style="top:80%; left:60%; width:20vw;" data-speed="-60"></div>
+        </div>
+        <span class="num">02</span>
+        <div class="inner">
+          <span class="kicker">Capítulo 02 — Convergência</span>
+          <h2>Tudo começa a puxar pro centro.</h2>
+          <p>Cada fragmento encontra sua direção.</p>
+        </div>
+      </div>
+
+      <div class="panel" id="p3">
+        <div class="art">
+          <div class="halo" style="top:50%; left:72%; width:34vh; height:34vh; transform:translate(-50%,-50%);" data-speed="-30"></div>
+          <div class="halo" style="top:50%; left:72%; width:24vh; height:24vh; transform:translate(-50%,-50%);" data-speed="-55"></div>
+          <div class="halo" style="top:50%; left:72%; width:14vh; height:14vh; transform:translate(-50%,-50%); border-color:rgba(0,217,255,.5);" data-speed="-80"></div>
+        </div>
+        <span class="num">03</span>
+        <div class="inner">
+          <span class="kicker">Capítulo 03 — Núcleo</span>
+          <h2>Um ponto de energia se acende.</h2>
+          <p>É daqui que tudo passa a existir.</p>
+        </div>
+      </div>
+
+      <div class="panel" id="p4">
+        <div class="art" id="net-art">
+          <div class="node-dot" style="top:22%; left:60%;" data-speed="-70"></div>
+          <div class="node-dot" style="top:38%; left:78%;" data-speed="-110"></div>
+          <div class="node-dot" style="top:58%; left:66%;" data-speed="-50"></div>
+          <div class="node-dot" style="top:74%; left:82%;" data-speed="-130"></div>
+          <div class="node-dot" style="top:30%; left:88%;" data-speed="-90"></div>
+          <div class="link-line" style="top:24%; left:61%; width:18vw; transform:rotate(14deg);" data-speed="-80"></div>
+          <div class="link-line" style="top:40%; left:79%; width:11vw; transform:rotate(58deg);" data-speed="-100"></div>
+          <div class="link-line" style="top:60%; left:67%; width:16vw; transform:rotate(-22deg);" data-speed="-60"></div>
+        </div>
+        <span class="num">04</span>
+        <div class="inner">
+          <span class="kicker">Capítulo 04 — Rede</span>
+          <h2>O núcleo se abre em uma rede viva.</h2>
+          <p>Cursos, trilhas, projetos e comunidade — conectados.</p>
+        </div>
+      </div>
+
+      <div class="panel finale-panel" id="p5">
+        <div class="inner">
+          <svg class="emblem" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40"/>
+            <circle class="inner-c" cx="50" cy="50" r="14"/>
+          </svg>
+          <span class="kicker">Capítulo 05 — Portal</span>
+          <h2>Acesso centralizado aos seus cursos e plataformas.</h2>
+          <p style="margin-top:18px; color:var(--ink-dim);">Aprenda, Pratique, Evolua — tudo em um só lugar.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<section id="stats">
+  <div class="stats-row">
+    <div class="stat"><h3 data-count="100">0</h3><span>cursos e guias</span></div>
+    <div class="stat"><h3 data-count="60">0</h3><span>projetos da comunidade</span></div>
+    <div class="stat"><h3 data-count="1">0</h3><span>portal — um só acesso</span></div>
+  </div>
+</section>
+
+<section id="editorial">
+  <div class="row">
+    <div class="visual"><div class="fill"></div><div class="glyph">📚</div></div>
+    <div>
+      <h3>Cursos &amp; Trilhas</h3>
+      <p>Conteúdos organizados por trilha, do primeiro passo ao avançado, sempre atualizados. Cada trilha é um caminho — não uma pilha de links.</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="visual"><div class="fill"></div><div class="glyph">🧩</div></div>
+    <div>
+      <h3>Projetos da comunidade</h3>
+      <p>Repositórios, skills e ferramentas nascidos dentro do próprio ecossistema INEMA — de editores de reel a orquestradores de agentes.</p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="visual"><div class="fill"></div><div class="glyph">🌐</div></div>
+    <div>
+      <h3>Comunidade viva</h3>
+      <p>Gente construindo, testando e trocando junto — não é só um catálogo estático. O sinal fica mais forte a cada pessoa que entra.</p>
+    </div>
+  </div>
+</section>
+
+<div class="cta-band">
+  <h2>O sinal já está aceso.</h2>
+  <p>Entre no portal e comece de onde estiver.</p>
+  <a class="btn" href="https://inema.club" target="_blank" rel="noopener">
+    Acessar o INEMA.CLUB
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</div>
+
+<footer>
+  <span>© INEMA.CLUB — todos os capítulos, um só portal.</span>
+  <span style="opacity:.6">Sinal II — Lane A v2 (corrida horizontal, âmbar) · <a href="lane-a.html" style="text-decoration:underline;">ver v1</a></span>
+</footer>
+
+<script>
+(function(){
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  gsap.registerPlugin(ScrollTrigger);
+
+  let lenis;
+  if (!reducedMotion){
+    lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+
+  // hero line reveal (fromTo — never rely on CSS for GSAP-managed transforms)
+  gsap.fromTo('#hero-title .line > span',
+    { yPercent: 115 },
+    { yPercent: 0, duration: 1.15, ease: 'power4.out', stagger: 0.12, delay: 0.15 });
+  gsap.fromTo('#hero .sub, #hero .kicker',
+    { opacity: 0, y: 18 },
+    { opacity: 1, y: 0, duration: .9, ease: 'power3.out', stagger: 0.08, delay: 0.55 });
+
+  if (!reducedMotion){
+
+    // ============ ORDERING LAW: pinned scenes first ============
+
+    // --- the horizontal run (the film) ---
+    const track = document.getElementById('track');
+    const runTween = gsap.to(track, {
+      x: () => -(track.scrollWidth - innerWidth),
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '#run', pin: true, scrub: true,
+        start: 'top top',
+        end: () => '+=' + (track.scrollWidth - innerWidth),
+        invalidateOnRefresh: true,
+        onUpdate: self => {
+          const chapters = ['Ruído','Convergência','Núcleo','Rede','Portal'];
+          const idx = Math.min(chapters.length-1, Math.floor(self.progress * chapters.length));
+          document.getElementById('chapter-label').textContent = chapters[idx];
+          document.getElementById('chapter-bar').style.transform = 'scaleX(' + self.progress + ')';
+        }
+      }
+    });
+
+    // per-element parallax inside the run (containerAnimation)
+    document.querySelectorAll('[data-speed]').forEach(el => {
+      gsap.to(el, {
+        x: +el.dataset.speed,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: el, containerAnimation: runTween,
+          start: 'left right', end: 'right left', scrub: true,
+          invalidateOnRefresh: true,
+        }
+      });
+    });
+
+    // panel copy slides in as each panel enters (containerAnimation)
+    document.querySelectorAll('.panel .inner').forEach(el => {
+      gsap.fromTo(el, { opacity: 0, x: 60 }, {
+        opacity: 1, x: 0, ease: 'none',
+        scrollTrigger: {
+          trigger: el, containerAnimation: runTween,
+          start: 'left 92%', end: 'left 55%', scrub: true,
+          invalidateOnRefresh: true,
+        }
+      });
+    });
+
+    // ---- ambient/background triggers AFTER the pin ----
+
+    // ticker marquee drift + velocity skew
+    const ticker = document.getElementById('ticker');
+    gsap.to(ticker, { xPercent: -50, ease: 'none', duration: 26, repeat: -1 });
+
+    // counters (once)
+    document.querySelectorAll('.stat h3').forEach(el => {
+      const target = +el.dataset.count;
+      ScrollTrigger.create({
+        trigger: el, start: 'top 85%', once: true,
+        onEnter: () => gsap.fromTo(el, { textContent: 0 }, {
+          textContent: target, duration: 1.6, ease: 'power2.out',
+          snap: { textContent: 1 },
+          onUpdate: function(){ el.textContent = Math.round(+el.textContent) + (target === 1 ? '' : '+'); }
+        })
+      });
+    });
+
+    // editorial clip-path reveals
+    document.querySelectorAll('.row .visual').forEach(el => {
+      gsap.fromTo(el, { clipPath: 'inset(0 0 100% 0)' }, {
+        clipPath: 'inset(0 0 0% 0)', ease: 'power2.out', duration: 1.1,
+        scrollTrigger: { trigger: el, start: 'top 80%', once: true }
+      });
+    });
+
+    // readout fade near end of run
+    ScrollTrigger.create({
+      trigger: '#stats', start: 'top 70%', end: 'top 30%', scrub: true,
+      onUpdate: self => {
+        document.querySelector('.chapter-readout').style.opacity = 1 - self.progress;
+      }
+    });
+
+    ScrollTrigger.refresh();
+  } else {
+    document.querySelectorAll('.stat h3').forEach(el => {
+      const t = +el.dataset.count; el.textContent = t + (t === 1 ? '' : '+');
+    });
+  }
+
+  // ---- dev contract ----
+  const params = new URLSearchParams(location.search);
+  const JUMP = params.get('jump');
+  if (JUMP !== null) history.scrollRestoration = 'manual';
+  window.addEventListener('load', () => {
+    if (JUMP !== null){
+      scrollTo(0, +JUMP || 0);
+      ScrollTrigger.update();
+      ScrollTrigger.refresh();
+      scrollTo(0, +JUMP || 0);
+    }
+    setTimeout(() => { window.__ready = true; }, 1600);
+  });
+
+  // ---- jank meter ----
+  let lastT = performance.now(), maxDelta = 0, lastLog = performance.now();
+  function jankLoop(t){
+    const d = t - lastT; lastT = t;
+    if (d > maxDelta) maxDelta = d;
+    if (t - lastLog > 2000){ console.log('[jank] max frame delta (2s window):', maxDelta.toFixed(1), 'ms'); maxDelta=0; lastLog=t; }
+    requestAnimationFrame(jankLoop);
+  }
+  requestAnimationFrame(jankLoop);
+})();
+</script>
+</body>
+</html>

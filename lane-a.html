@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INEMA.CLUB — Sinal (Lane A, pure-code)</title>
+<meta name="description" content="Do ruído ao acesso centralizado: o filme-scroll do INEMA.CLUB, versão pure-code (GSAP + Lenis).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0e27; --bg2:#030e20; --cyan:#00d9ff; --violet:#8b5cf6; --amber:#f59e0b;
+    --ink:#e8ecff; --ink-dim:#8b93b8; --border:#2d3548;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{background:var(--bg);}
+  body{
+    background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    overflow-x:hidden; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.02em;}
+  a{color:inherit;}
+  ::selection{background:var(--cyan); color:#04101f;}
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px; color:#fff;
+  }
+  .logo-lockup{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.05rem;}
+  .logo-lockup svg{width:26px; height:26px; display:block;}
+  .chapter-readout{display:flex; align-items:center; gap:12px; font-size:.78rem; color:currentColor; opacity:.85;}
+  .chapter-readout .bar{width:110px; height:2px; background:currentColor; opacity:.3; position:relative; overflow:hidden;}
+  .chapter-readout .bar i{position:absolute; inset:0; background:var(--cyan); transform-origin:left; transform:scaleX(0);}
+
+  /* ============ LANE A FILM (pure-code) ============ */
+  #lane-a-film{ position:relative; background:var(--bg); }
+
+  /* --- Scene 0: hero char-split --- */
+  #scene-hero{
+    height:100vh; display:flex; align-items:center; justify-content:center;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  #hero-particles{ position:absolute; inset:0; }
+  #scene-hero .content{ position:relative; z-index:2; }
+  #scene-hero .kicker{ font-size:.75rem; letter-spacing:.24em; text-transform:uppercase; color:var(--cyan); margin-bottom:18px; display:block; }
+  #scene-hero h1{ font-size:clamp(2.6rem,8vw,6.4rem); font-weight:600; overflow:hidden; }
+  #scene-hero h1 .char-wrap{ display:inline-block; overflow:hidden; }
+  #scene-hero h1 .char{ display:inline-block; }
+
+  /* --- Scene 1: convergence particles (pinned) --- */
+  #scene-converge{ height:170vh; position:relative; }
+  #scene-converge .stage{ position:sticky; top:0; height:100vh; overflow:hidden; }
+  #converge-canvas{ position:absolute; inset:0; }
+  .scene-copy{
+    position:absolute; left:6vw; top:50%; transform:translateY(-50%); max-width:600px; z-index:5;
+    padding:28px 32px; border-radius:18px;
+    background:linear-gradient(120deg, rgba(3,6,20,.6), rgba(3,6,20,.15) 75%);
+    backdrop-filter:blur(6px);
+  }
+  .scene-copy .kicker{ font-size:.75rem; letter-spacing:.24em; text-transform:uppercase; color:var(--cyan); margin-bottom:14px; display:block; }
+  .scene-copy h2{ font-size:clamp(2rem,5vw,3.6rem); font-weight:600; line-height:1.05; color:#fff; }
+  .scene-copy p{ margin-top:16px; font-size:1.05rem; color:var(--ink-dim); max-width:480px; }
+
+  /* --- Scene 2: core pulse (pinned) --- */
+  #scene-core{ height:160vh; position:relative; }
+  #scene-core .stage{ position:sticky; top:0; height:100vh; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .core-orb{
+    position:relative; width:44vh; height:44vh; border-radius:50%;
+    background:radial-gradient(circle, #fff 0%, var(--cyan) 30%, rgba(139,92,246,.4) 62%, transparent 72%);
+    box-shadow:0 0 120px 40px rgba(0,217,255,.25);
+  }
+  .core-ring{
+    position:absolute; inset:0; margin:auto; border:1.5px solid rgba(0,217,255,.5); border-radius:50%;
+  }
+  #scene-core .scene-copy{ left:auto; right:6vw; text-align:right; }
+  #scene-core .scene-copy p{ margin-left:auto; }
+
+  /* --- Scene 3: network grid (pinned) --- */
+  #scene-grid{ height:170vh; position:relative; }
+  #scene-grid .stage{ position:sticky; top:0; height:100vh; overflow:hidden; }
+  #grid-svg{ position:absolute; inset:0; width:100%; height:100%; }
+  #grid-svg line{ stroke:var(--cyan); stroke-width:1; opacity:.35; vector-effect:non-scaling-stroke; }
+  #grid-svg circle{ fill:var(--violet); }
+
+  /* --- Scene 4: finale emblem --- */
+  #scene-finale{ height:150vh; position:relative; }
+  #scene-finale .stage{
+    position:sticky; top:0; height:100vh; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    background:radial-gradient(ellipse at center, rgba(0,217,255,.06), transparent 70%);
+  }
+  .finale-emblem{ width:120px; height:120px; margin-bottom:34px; }
+  .finale-emblem circle{ fill:none; stroke:var(--cyan); stroke-width:2; }
+  .finale-emblem circle.inner{ stroke:var(--violet); }
+  #scene-finale h2{ font-size:clamp(2rem,5vw,3.6rem); font-weight:600; max-width:820px; }
+  #scene-finale p{ margin-top:18px; color:var(--ink-dim); font-size:1.1rem; }
+
+  .film-fade-out{
+    position:fixed; inset:0; pointer-events:none; background:var(--bg2); opacity:0; z-index:30;
+  }
+
+  /* ============ AFTER-FILM CONTENT (same as Lane C, for parity) ============ */
+  main{ position:relative; background:var(--bg2); z-index:20; }
+  section{ padding:120px 8vw; max-width:1240px; margin:0 auto; }
+  .section-kicker{ font-size:.75rem; letter-spacing:.22em; text-transform:uppercase; color:var(--cyan); margin-bottom:18px; display:block; }
+  .section-title{ font-size:clamp(1.8rem,4vw,3rem); font-weight:600; max-width:720px; margin-bottom:20px; }
+  .section-lede{ color:var(--ink-dim); max-width:560px; font-size:1.05rem; line-height:1.6; margin-bottom:56px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  @media (max-width:860px){ .grid3{ grid-template-columns:1fr; } }
+  .card{
+    border:1px solid var(--border); border-radius:14px; padding:32px;
+    background:linear-gradient(180deg, rgba(139,92,246,.05), transparent);
+    transition:border-color .25s ease, transform .25s ease;
+  }
+  .card:hover{ border-color:var(--cyan); transform:translateY(-4px); }
+  .card .icon{ font-size:1.8rem; margin-bottom:18px; display:block; }
+  .card h3{ font-size:1.15rem; margin-bottom:10px; }
+  .card p{ color:var(--ink-dim); font-size:.95rem; line-height:1.55; }
+  .cta-band{ text-align:center; padding:140px 8vw; background:radial-gradient(ellipse at center, rgba(0,217,255,.08), transparent 70%); }
+  .cta-band h2{ font-size:clamp(1.9rem,4.5vw,3.2rem); margin-bottom:26px; }
+  .cta-band p{ color:var(--ink-dim); margin-bottom:38px; }
+  .btn{
+    display:inline-flex; align-items:center; gap:10px; padding:16px 32px; border-radius:999px;
+    background:var(--cyan); color:#04101f; font-weight:600; text-decoration:none; font-size:.95rem;
+    box-shadow:0 0 0 1px rgba(0,217,255,.3), 0 12px 40px -8px rgba(0,217,255,.5);
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 0 0 1px rgba(0,217,255,.5), 0 16px 48px -8px rgba(0,217,255,.7); }
+  footer{
+    border-top:1px solid var(--border); padding:56px 8vw; display:flex; justify-content:space-between;
+    align-items:center; flex-wrap:wrap; gap:24px; color:var(--ink-dim); font-size:.85rem;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #scene-converge, #scene-core, #scene-grid, #scene-finale{ height:auto; }
+    #scene-converge .stage, #scene-core .stage, #scene-grid .stage, #scene-finale .stage{ position:relative; height:auto; padding:80px 0; }
+    .scene-copy{ position:relative; left:auto; right:auto; top:auto; transform:none; margin:20px auto; }
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <div class="logo-lockup">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="2"/>
+      <circle cx="16" cy="16" r="4.2" fill="currentColor"/>
+    </svg>
+    INEMA.CLUB
+  </div>
+  <div class="chapter-readout">
+    <span id="chapter-label">Sinal</span>
+    <div class="bar"><i id="chapter-bar"></i></div>
+  </div>
+
+</header>
+
+<nav aria-label="Versões" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:45; display:flex; gap:2px; padding:4px; border-radius:999px; background:rgba(3,6,20,.55); backdrop-filter:blur(8px); border:1px solid rgba(139,147,184,.25); font-size:.7rem; letter-spacing:.04em;">
+  <a href="index.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme I</a>
+  <a href="index2.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme II</a>
+  <a href="index3.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Filme III</a>
+  <a href="lane-a.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; background:rgba(0,217,255,.15); color:#00d9ff; white-space:nowrap;">Code I</a>
+  <a href="lane-a2.html" style="padding:6px 12px; border-radius:999px; text-decoration:none; color:#8b93b8; white-space:nowrap;">Code II</a>
+</nav>
+
+<div id="lane-a-film">
+
+  <section id="scene-hero">
+    <canvas id="hero-particles"></canvas>
+    <div class="content">
+      <span class="kicker">INEMA.CLUB</span>
+      <h1 id="hero-title"><span class="char-wrap"></span></h1>
+    </div>
+  </section>
+
+  <div id="scene-converge">
+    <div class="stage">
+      <canvas id="converge-canvas"></canvas>
+      <div class="scene-copy">
+        <span class="kicker">Capítulo 01 — Ruído</span>
+        <h2>Milhares de fragmentos, dispersos no vazio.</h2>
+        <p>Cursos soltos, projetos espalhados, conhecimento sem lugar certo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="scene-core">
+    <div class="stage">
+      <div class="core-orb" id="core-orb">
+        <div class="core-ring" id="ring-1" style="width:60%; height:60%;"></div>
+        <div class="core-ring" id="ring-2" style="width:80%; height:80%;"></div>
+        <div class="core-ring" id="ring-3" style="width:100%; height:100%;"></div>
+      </div>
+      <div class="scene-copy">
+        <span class="kicker">Capítulo 02 — Núcleo</span>
+        <h2>Um ponto de energia se acende.</h2>
+        <p>É daqui que tudo passa a existir.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="scene-grid">
+    <div class="stage">
+      <svg id="grid-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div id="grid-nodes" style="position:absolute; inset:0;"></div>
+      <div class="scene-copy">
+        <span class="kicker">Capítulo 03 — Rede</span>
+        <h2>O núcleo se abre em uma rede viva.</h2>
+        <p>Cursos, trilhas, projetos e comunidade — conectados.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="scene-finale">
+    <div class="stage">
+      <svg class="finale-emblem" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40"/>
+        <circle class="inner" cx="50" cy="50" r="14"/>
+      </svg>
+      <h2>Acesso centralizado aos seus cursos e plataformas.</h2>
+      <p>Aprenda, Pratique, Evolua — tudo em um só lugar.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="film-fade-out" id="fade-out"></div>
+
+<main>
+  <section id="o-que-e">
+    <span class="section-kicker">O que é o INEMA.CLUB</span>
+    <h2 class="section-title">Um portal só, pra tudo que você já vem construindo.</h2>
+    <p class="section-lede">Cursos, trilhas, projetos e comunidade — centralizados num único acesso, sem precisar lembrar em qual link ficou cada coisa.</p>
+    <div class="grid3">
+      <div class="card">
+        <span class="icon">📚</span>
+        <h3>Cursos &amp; Trilhas</h3>
+        <p>Conteúdos organizados por trilha, do primeiro passo ao avançado, sempre atualizados.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🧩</span>
+        <h3>Projetos da comunidade</h3>
+        <p>Repositórios, skills e ferramentas nascidos dentro do próprio ecossistema INEMA.</p>
+      </div>
+      <div class="card">
+        <span class="icon">🌐</span>
+        <h3>Comunidade viva</h3>
+        <p>Gente construindo, testando e trocando junto — não é só um catálogo estático.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-band">
+    <h2>O sinal já está aceso.</h2>
+    <p>Entre no portal e comece de onde estiver.</p>
+    <a class="btn" href="https://inema.club" target="_blank" rel="noopener">
+      Acessar o INEMA.CLUB
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+
+  <footer>
+    <span>© INEMA.CLUB — todos os capítulos, um só portal.</span>
+    <span style="opacity:.6">Lane A — pure-code (GSAP + Lenis)</span>
+  </footer>
+</main>
+
+<script>
+(function(){
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Lenis + GSAP ticker ----
+  let lenis;
+  if (!reducedMotion){
+    lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+
+  // ---- hero char-split reveal ----
+  const heroTitle = document.getElementById('hero-title');
+  const text = 'No caos, um sinal.';
+  const wrap = heroTitle.querySelector('.char-wrap');
+  [...text].forEach(ch => {
+    const outer = document.createElement('span');
+    outer.className = 'char-wrap';
+    const inner = document.createElement('span');
+    inner.className = 'char';
+    inner.textContent = ch === ' ' ? ' ' : ch;
+    outer.appendChild(inner);
+    heroTitle.appendChild(outer);
+  });
+  wrap.remove();
+  gsap.fromTo('#hero-title .char', { yPercent: 120 }, {
+    yPercent: 0, duration: 1.1, ease: 'power4.out', stagger: 0.02, delay: 0.2
+  });
+
+  // ---- hero ambient particles (fades over first 7% of scroll) ----
+  const heroCanvas = document.getElementById('hero-particles');
+  const hctx = heroCanvas.getContext('2d');
+  function sizeHero(){ heroCanvas.width = innerWidth; heroCanvas.height = innerHeight; }
+  sizeHero(); addEventListener('resize', sizeHero);
+  const heroParticles = reducedMotion ? [] : Array.from({length:70}, () => ({
+    x: Math.random()*innerWidth, y: Math.random()*innerHeight,
+    r: Math.random()*1.6+0.4, s: Math.random()*0.3+0.05, tw: Math.random()*Math.PI*2,
+    color: Math.random() > 0.5 ? '0,217,255' : '139,92,246'
+  }));
+  let heroAlpha = 1;
+  function drawHero(){
+    hctx.clearRect(0,0,heroCanvas.width, heroCanvas.height);
+    if (heroAlpha <= 0) return;
+    heroParticles.forEach(p => {
+      p.y -= p.s; if (p.y < -5) p.y = innerHeight+5;
+      p.tw += 0.02;
+      const a = (0.35 + 0.35*Math.sin(p.tw)) * heroAlpha;
+      hctx.beginPath();
+      hctx.fillStyle = `rgba(${p.color},${a})`;
+      hctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      hctx.fill();
+    });
+  }
+  function heroLoop(){ drawHero(); if (heroAlpha > 0) requestAnimationFrame(heroLoop); }
+  heroLoop();
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  // ============ ORDERING LAW: pinned scenes first ============
+
+  gsap.timeline({
+    scrollTrigger: { trigger:'#scene-hero', start:'top top', end:'+=' + innerHeight*0.5, scrub:true,
+      onUpdate: self => { heroAlpha = 1 - self.progress; } }
+  });
+
+  gsap.timeline({
+    scrollTrigger: { trigger:'#scene-converge', pin:'.stage', start:'top top', end:'+=140%', scrub:true }
+  });
+
+  gsap.timeline({
+    scrollTrigger: { trigger:'#scene-core', pin:'.stage', start:'top top', end:'+=130%', scrub:true }
+  })
+  .fromTo('#core-orb', { scale:0.3, opacity:0.2 }, { scale:1, opacity:1, ease:'none' }, 0)
+  .fromTo(['#ring-1','#ring-2','#ring-3'], { rotate:0, opacity:0 }, { rotate:180, opacity:1, ease:'none', stagger:0.1 }, 0);
+
+  gsap.timeline({
+    scrollTrigger: { trigger:'#scene-grid', pin:'.stage', start:'top top', end:'+=140%', scrub:true }
+  });
+
+  gsap.timeline({
+    scrollTrigger: { trigger:'#scene-finale', pin:'.stage', start:'top top', end:'+=120%', scrub:true }
+  })
+  .fromTo('.finale-emblem', { scale:0.6, opacity:0.3, rotate:-30 }, { scale:1, opacity:1, rotate:0, ease:'none' }, 0)
+  .fromTo('#scene-finale h2, #scene-finale p', { opacity:0, y:24 }, { opacity:1, y:0, ease:'none', stagger:0.1 }, 0.3);
+
+  // ---- ambient/background triggers AFTER pinned scenes ----
+  ScrollTrigger.create({
+    trigger:'#lane-a-film', start:'bottom bottom-=10%', end:'bottom top', scrub:true,
+    onUpdate: self => { document.getElementById('fade-out').style.opacity = self.progress; }
+  });
+
+  // chapter readout across the whole film
+  const chapters = [
+    { el:'#scene-hero', label:'Sinal' },
+    { el:'#scene-converge', label:'Ruído' },
+    { el:'#scene-core', label:'Núcleo' },
+    { el:'#scene-grid', label:'Rede' },
+    { el:'#scene-finale', label:'Portal' },
+  ];
+  const chapterLabel = document.getElementById('chapter-label');
+  const chapterBar = document.getElementById('chapter-bar');
+  ScrollTrigger.create({
+    trigger:'#lane-a-film', start:'top top', end:'bottom bottom', scrub:true,
+    onUpdate: self => {
+      const idx = Math.min(chapters.length-1, Math.floor(self.progress * chapters.length));
+      chapterLabel.textContent = chapters[idx].label;
+      chapterBar.style.transform = 'scaleX(' + self.progress + ')';
+      document.querySelector('.chapter-readout').style.opacity = self.progress >= 0.97 ? Math.max(0, 1-(self.progress-0.97)/0.03) : 1;
+    }
+  });
+
+  // ---- converge canvas particle system ----
+  const cvs = document.getElementById('converge-canvas');
+  const cctx = cvs.getContext('2d');
+  function sizeCvs(){ cvs.width = innerWidth; cvs.height = innerHeight; }
+  sizeCvs(); addEventListener('resize', sizeCvs);
+  const N = 160;
+  const convergeParticles = Array.from({length:N}, () => {
+    const ang = Math.random()*Math.PI*2, dist = 0.35 + Math.random()*0.65;
+    return {
+      sx: innerWidth/2 + Math.cos(ang)*dist*innerWidth*0.7,
+      sy: innerHeight/2 + Math.sin(ang)*dist*innerHeight*0.7,
+      r: Math.random()*2+0.6,
+      color: Math.random() > 0.5 ? '0,217,255' : '139,92,246',
+      jitter: Math.random()*40-20,
+    };
+  });
+  let convergeProgress = 0;
+  ScrollTrigger.create({
+    trigger:'#scene-converge', start:'top top', end:'+=140%', scrub:true,
+    onUpdate: self => { convergeProgress = self.progress; }
+  });
+  function drawConverge(){
+    cctx.clearRect(0,0,cvs.width,cvs.height);
+    const cx = cvs.width/2, cy = cvs.height/2;
+    const p = convergeProgress;
+    convergeParticles.forEach(pt => {
+      const x = pt.sx + (cx - pt.sx) * p + Math.sin(p*10+pt.jitter)*4;
+      const y = pt.sy + (cy - pt.sy) * p + Math.cos(p*10+pt.jitter)*4;
+      const alpha = 0.85 - p*0.3;
+      cctx.beginPath();
+      cctx.fillStyle = `rgba(${pt.color},${alpha})`;
+      cctx.arc(x, y, pt.r + p*1.5, 0, Math.PI*2);
+      cctx.fill();
+    });
+    requestAnimationFrame(drawConverge);
+  }
+  drawConverge();
+
+  // ---- grid svg build ----
+  const gridSvg = document.getElementById('grid-svg');
+  const rows = 8, cols = 8;
+  const nsSVG = 'http://www.w3.org/2000/svg';
+  for (let i=0;i<=rows;i++){
+    const y = i*(100/rows);
+    const l = document.createElementNS(nsSVG,'line');
+    l.setAttribute('x1','0'); l.setAttribute('y1',y); l.setAttribute('x2','100'); l.setAttribute('y2',y);
+    l.style.opacity = '0';
+    gridSvg.appendChild(l);
+  }
+  for (let i=0;i<=cols;i++){
+    const x = i*(100/cols);
+    const l = document.createElementNS(nsSVG,'line');
+    l.setAttribute('x1',x); l.setAttribute('y1','0'); l.setAttribute('x2',x); l.setAttribute('y2','100');
+    l.style.opacity = '0';
+    gridSvg.appendChild(l);
+  }
+  const gridNodes = document.getElementById('grid-nodes');
+  for (let i=1;i<rows;i++){
+    for (let j=1;j<cols;j++){
+      if ((i*cols+j) % 3 !== 0){
+        const dot = document.createElement('div');
+        dot.className = 'grid-node';
+        dot.style.cssText = `position:absolute; left:${j*(100/cols)}%; top:${i*(100/rows)}%; width:7px; height:7px;
+          margin:-3.5px; border-radius:50%; background:var(--violet); opacity:0;`;
+        gridNodes.appendChild(dot);
+      }
+    }
+  }
+  gsap.timeline({
+    scrollTrigger: { trigger:'#scene-grid', start:'top top', end:'+=140%', scrub:true }
+  }).to('#grid-svg line', { opacity:.35, stagger:0.01, ease:'none' }, 0)
+    .to('.grid-node', { opacity:1, stagger:0.008, ease:'none' }, 0.15);
+
+  ScrollTrigger.refresh();
+
+  // ---- dev contract ----
+  const params = new URLSearchParams(location.search);
+  const JUMP = params.get('jump');
+  if (JUMP !== null) history.scrollRestoration = 'manual';
+  window.addEventListener('load', () => {
+    if (JUMP !== null){
+      scrollTo(0, +JUMP || 0);
+      ScrollTrigger.update();
+      ScrollTrigger.getAll().forEach(st => { if (st.scrub) st.progress = st.progress; });
+    }
+    setTimeout(() => { window.__ready = true; }, 1600);
+  });
+
+  // ---- jank meter ----
+  let lastT = performance.now(), maxDelta = 0, lastLog = performance.now();
+  function jankLoop(t){
+    const d = t - lastT; lastT = t;
+    if (d > maxDelta) maxDelta = d;
+    if (t - lastLog > 2000){ console.log('[jank] max frame delta (2s window):', maxDelta.toFixed(1), 'ms'); maxDelta=0; lastLog=t; }
+    requestAnimationFrame(jankLoop);
+  }
+  requestAnimationFrame(jankLoop);
+})();
+</script>
+</body>
+</html>
