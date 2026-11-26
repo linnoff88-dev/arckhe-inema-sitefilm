@@ -1,4 +1,4 @@
-ï»¿# inema-sitefilm ê¢â¬â Sinal
+ï»¿# ARCKHÉ-sitefilm ê¢â¬â Sinal
 
 <div align="center">
   <img src="capa/logo.svg" alt="Arckhé AI" height="48" />
@@ -6,7 +6,7 @@
 </div>
 
 
-Site scroll-film do [INEMA.CLUB](https://inema.club): a pêÂ¡gina inteira êÂ© um plano-sequêÂªncia que roda conforme o visitante rola, e se dissolve no conteêÂºdo do portal ao final. ConstruêÂ­do com a skill [scroll-film-studio](https://github.com/inematds/fable5skill) (fable5skill).
+Site scroll-film do [ARCKHÉ AI](https://ARCKHÉ AI): a pêÂ¡gina inteira êÂ© um plano-sequêÂªncia que roda conforme o visitante rola, e se dissolve no conteêÂºdo do portal ao final. ConstruêÂ­do com a skill [scroll-film-studio](https://github.com/linnoff88-dev/fable5skill) (fable5skill).
 
 **Jornada:** RuêÂ­do (dados dispersos) ê¢â â ConvergêÂªncia ê¢â â NêÂºcleo ê¢â â Rede ê¢â â Portal ê¢â¬â literalizando o slogan "acesso centralizado aos seus cursos e plataformas".
 
@@ -14,11 +14,11 @@ Site scroll-film do [INEMA.CLUB](https://inema.club): a pêÂ¡gina inteira ê
 
 | VersêÂ£o | URL | Lane / Engine | EstêÂ©tica |
 |---|---|---|---|
-| **Filme I** | [/](https://inematds.github.io/inema-sitefilm/) | Lane C ê¢â¬â Agnes AI (US$0), keyframes interpolados | partêÂ­culas ciano/violeta, orgêÂ¢nico |
-| **Filme II** | [/index2.html](https://inematds.github.io/inema-sitefilm/index2.html) | Lane C (mesma footage) ê¢â¬â *Director's Cut* | abertura com o filme dentro das letras SINAL, voo pela tipografia, dots de capêÂ­tulo clicêÂ¡veis, timeline de scrub |
-| **Filme III** | [/index3.html](https://inematds.github.io/inema-sitefilm/index3.html) | Lane B ê¢â¬â Kie.ai Seedance v1 Lite (720p) | neon-geomêÂ©trico, têÂºnel roxo/verde |
-| **Code I** | [/lane-a.html](https://inematds.github.io/inema-sitefilm/lane-a.html) | Lane A ê¢â¬â GSAP + Lenis puro | vertical, ciano, partêÂ­culas em canvas |
-| **Code II** | [/lane-a2.html](https://inematds.github.io/inema-sitefilm/lane-a2.html) | Lane A v2 ê¢â¬â corrida horizontal pinada | êÂ¢mbar, nêÂºmeros outline, containerAnimation |
+| **Filme I** | [/](https://linnoff88-dev.github.io/arckhe-/) | Lane C ê¢â¬â Agnes AI (US$0), keyframes interpolados | partêÂ­culas ciano/violeta, orgêÂ¢nico |
+| **Filme II** | [/index2.html](https://linnoff88-dev.github.io/arckhe-/index2.html) | Lane C (mesma footage) ê¢â¬â *Director's Cut* | abertura com o filme dentro das letras SINAL, voo pela tipografia, dots de capêÂ­tulo clicêÂ¡veis, timeline de scrub |
+| **Filme III** | [/index3.html](https://linnoff88-dev.github.io/arckhe-/index3.html) | Lane B ê¢â¬â Kie.ai Seedance v1 Lite (720p) | neon-geomêÂ©trico, têÂºnel roxo/verde |
+| **Code I** | [/lane-a.html](https://linnoff88-dev.github.io/arckhe-/lane-a.html) | Lane A ê¢â¬â GSAP + Lenis puro | vertical, ciano, partêÂ­culas em canvas |
+| **Code II** | [/lane-a2.html](https://linnoff88-dev.github.io/arckhe-/lane-a2.html) | Lane A v2 ê¢â¬â corrida horizontal pinada | êÂ¢mbar, nêÂºmeros outline, containerAnimation |
 
 ## Como cada filme foi feito
 

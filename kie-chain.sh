@@ -11,7 +11,7 @@ MODEL="bytedance/v1-lite-image-to-video"
 
 declare -a NAMES=(cap1 cap2 cap3 cap4 cap5)
 declare -a PROMPTS=(
-"slow cinematic camera drift forward through a vast dark void of scattered glowing cyan and violet data fragments, particles subtly beginning to align and drift toward the center, smooth continuous motion, no cuts"
+"slow cARCKHÉtic camera drift forward through a vast dark void of scattered glowing cyan and violet data fragments, particles subtly beginning to align and drift toward the center, smooth continuous motion, no cuts"
 "continue the exact same camera drift, now accelerating into a converging tunnel of cyan and violet light particles rushing toward a single distant point, smooth continuous motion, no cuts, do not change the colour grade"
 "continue the exact same camera drift, the tunnel of light collapses into a single brilliant glowing portal core with concentric rings of cyan and violet energy, smooth continuous motion, no cuts, do not change the colour grade"
 "continue the exact same camera drift, the glowing portal core expands and opens outward revealing a vast organized grid of glowing cyan and violet nodes and connecting lines, smooth continuous motion, no cuts, do not change the colour grade"
